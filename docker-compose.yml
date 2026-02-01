@@ -1,6 +1,6 @@
 services:
   stats-server:
-    image: stats-image:latest
+    build: ./stats/server
     container_name: stats
     ports:
       - "9090:9090"
@@ -16,7 +16,7 @@ services:
       - POSTGRES_PASSWORD=12345
 
   ewm-service:
-    image: ewm-image:latest
+    build: ./main-server
     container_name: ewm
     ports:
       - "8080:8080"

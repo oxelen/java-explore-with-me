@@ -2,7 +2,7 @@ server.port: 8080
 
 spring.datasource:
   driver-class-name: org.postgresql.Driver
-  url: jdbc:postgresql://localhost:5431/ewmdb
+  url: jdbc:postgresql://ewm-db:5432/ewmdb
   username: dbuser
   password: 12345
 
