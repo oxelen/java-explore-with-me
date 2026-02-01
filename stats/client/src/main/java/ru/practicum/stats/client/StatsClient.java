@@ -15,16 +15,16 @@ import java.util.Map;
 @Service
 @Slf4j
 public class StatsClient extends BaseClient {
-    private final String APP_NAME;
+    private final String appName;
 
     public StatsClient(@Value("${ewm-stats-server-url}") String url, RestTemplateBuilder builder, String appName) {
         super(builder.uriTemplateHandler(new DefaultUriBuilderFactory(url)).requestFactory(() -> new HttpComponentsClientHttpRequestFactory()).build());
-        this.APP_NAME = appName;
+        this.appName = appName;
     }
 
     public ResponseEntity<Object> hit(CreateHitDto createHitDto) {
         log.info("Start client method hit");
-        createHitDto.setApp(APP_NAME);
+        createHitDto.setApp(appName);
 
         return post("/hit", createHitDto);
     }
