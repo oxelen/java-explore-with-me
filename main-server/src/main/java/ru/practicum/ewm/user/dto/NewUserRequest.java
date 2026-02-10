@@ -6,16 +6,17 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.ewm.util.ValidationMessages;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class NewUserRequest {
-    @NotBlank(message = "must not be blank")
+    @NotBlank(message = ValidationMessages.NOT_BLANK)
     @Email(message = "wrong format")
     private String email;
 
-    @NotBlank(message = "must not be blank")
+    @NotBlank(message = ValidationMessages.NOT_BLANK)
     private String name;
 }

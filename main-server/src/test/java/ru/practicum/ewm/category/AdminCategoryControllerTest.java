@@ -18,8 +18,7 @@ import java.nio.charset.StandardCharsets;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -66,7 +65,7 @@ public class AdminCategoryControllerTest {
     }
 
     @Test
-    public void pathcTest() throws Exception {
+    public void patchTest() throws Exception {
         when(service.update(anyLong(), any())).thenReturn(responseDto);
 
         mvc.perform(patch(API_PREFIX + "/" + responseDto.getId())
@@ -77,5 +76,12 @@ public class AdminCategoryControllerTest {
                 .andExpect(status().is(200))
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()));
+    }
+
+    @Test
+    public void deleteTest() throws Exception {
+        mvc.perform(delete(API_PREFIX + "/" + responseDto.getId())
+                        .characterEncoding(StandardCharsets.UTF_8))
+                .andExpect(status().is(204));
     }
 }

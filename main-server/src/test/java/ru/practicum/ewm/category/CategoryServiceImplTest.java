@@ -1,8 +1,10 @@
 package ru.practicum.ewm.category;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.dto.NewCategoryRequest;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.service.CategoryService;
+import ru.practicum.ewm.error.exception.ConditionsNotMetException;
+import ru.practicum.ewm.user.model.User;
+import ru.practicum.ewm.util.EntityGetter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -24,6 +29,8 @@ public class CategoryServiceImplTest {
     private final EntityManager em;
 
     private final CategoryService categoryService;
+
+    private final EntityGetter eg;
 
     @Test
     public void createTest() {
@@ -49,6 +56,26 @@ public class CategoryServiceImplTest {
 
         assertThat(res, notNullValue());
         assertThat(res.getName(), equalTo(dto.getName()));
+    }
+
+    @Test
+    public void deleteTest() {
+        NewCategoryRequest dto = getDefDto();
+        Long catId = categoryService.create(dto).getId();
+        categoryService.delete(catId);
+
+        TypedQuery<Category> query = em.createQuery("select c from Category c where c.id = :id", Category.class);
+
+        Assertions.assertThrows(NoResultException.class, () -> query.setParameter("id", catId).getSingleResult());
+    }
+
+    @Test
+    public void deleteCategoryExtendEventShouldThrowException() {
+        Category cat = eg.insertCategory();
+        User user = eg.insertUser();
+        eg.insertEvent(user, cat);
+
+        Assertions.assertThrows(ConditionsNotMetException.class, () -> categoryService.delete(cat.getId()));
     }
 
     private NewCategoryRequest getDefDto() {

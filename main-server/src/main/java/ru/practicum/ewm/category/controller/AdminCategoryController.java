@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -31,17 +32,25 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{catId}")
-    public ResponseEntity<CategoryDto> patch(@PositiveOrZero @PathVariable("catId")
+    public ResponseEntity<CategoryDto> patch(@PathVariable @PositiveOrZero
                                              Long catId,
                                              @Valid @RequestBody
                                              NewCategoryRequest newCategoryRequest
-                                             ) {
-        log.info("Patch category");
+    ) {
+        log.info("PATCH category, id = {}", catId);
         CategoryDto res = categoryService.update(catId, newCategoryRequest);
         log.info("Category updated");
 
         return ResponseEntity
                 .status(200)
                 .body(res);
+    }
+
+    @DeleteMapping("/{catId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PositiveOrZero @PathVariable Long catId) {
+        log.info("DELETE category, id = {}", catId);
+        categoryService.delete(catId);
+        log.info("category deleted, id = {}", catId);
     }
 }

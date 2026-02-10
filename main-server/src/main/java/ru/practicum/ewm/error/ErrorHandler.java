@@ -2,12 +2,15 @@ package ru.practicum.ewm.error;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
+import ru.practicum.ewm.error.exception.ValidationException;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -17,9 +20,9 @@ import java.util.List;
 
 @RestControllerAdvice
 public class ErrorHandler {
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public List<ApiError> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<List<ApiError>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        final HttpStatus status =HttpStatus.BAD_REQUEST;
         List<ApiError> errors = new ArrayList<>();
 
         ex.getBindingResult().getAllErrors().forEach((error) -> {
@@ -34,34 +37,61 @@ public class ErrorHandler {
                    /* Arrays.asList(ex.getStackTrace()),*/
                     msg,
                     "Incorrectly made request",
-                    HttpStatus.BAD_REQUEST,
+                    status,
                     LocalDateTime.now()
             ));
         });
 
-        return errors;
+        return ResponseEntity.status(status).body(errors);
     }
 
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiError> handleValidationException(ValidationException ex) {
+        ApiError error = new ApiError(
+                ex.getMessage(),
+                "Incorrectly made request",
+                HttpStatus.BAD_REQUEST,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(error.status()).body(error);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
-    public ApiError handleSQLException(ConstraintViolationException ex) {
-        return new ApiError(
+    public ResponseEntity<ApiError> handleSQLException(ConstraintViolationException ex) {
+        ApiError error = new ApiError(
            /* Arrays.asList(ex.getStackTrace()),*/
                 ex.getMessage(),
                 "Integrity constraint has been violated.",
                 HttpStatus.CONFLICT,
                 LocalDateTime.now()
         );
+
+        return ResponseEntity.status(error.status()).body(error);
     }
 
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(NotFoundException.class)
-    public ApiError handleNotFoundException(NotFoundException ex) {
-        return new ApiError(
+    @ExceptionHandler(ConditionsNotMetException.class)
+    public ResponseEntity<ApiError> handleConditionsNotMet(ConditionsNotMetException ex) {
+        ApiError error = new ApiError(
+                /* Arrays.asList(ex.getStackTrace()),*/
                 ex.getMessage(),
-                "The required object was not found.",
+                "For the requested operation the conditions are not met.",
                 HttpStatus.CONFLICT,
                 LocalDateTime.now()
         );
+
+        return ResponseEntity.status(error.status()).body(error);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFoundException(NotFoundException ex) {
+        ApiError error = new ApiError(
+                ex.getMessage(),
+                "The required object was not found.",
+                HttpStatus.NOT_FOUND,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(error.status()).body(error);
     }
 }
