@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.model.Category;
+import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
+import ru.practicum.ewm.event.dao.EventRepository;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.mapper.EventMapper;
@@ -22,20 +24,22 @@ import java.time.LocalDateTime;
 public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
 
     @Override
     public EventFullDto create(Long userId, NewEventDto newEvent) {
+        Event event = initEvent(userId, newEvent);
 
 
-        return null;
+        return EventMapper.toFullEventDto(eventRepository.save(event));
     }
 
     private Event initEvent(Long userId, NewEventDto dto) {
         User user = findUserById(userId);
         Category category = findCategoryById(dto.getCategory().longValue());
+        checkEventDate(dto.getEventDate());
 
-
-        return null;
+        return EventMapper.toEvent(dto, category, user);
     }
 
     private User findUserById(Long userId) {
@@ -56,7 +60,7 @@ public class EventServiceImpl implements EventService {
         LocalDateTime target = LocalDateTime.now().plusHours(2);
         if (eventDate.isBefore(target)) {
             log.warn("Event date is not before 2 hours from now");
-            throw
+            throw new ConditionsNotMetException("должно содержать дату, которая еще не наступила.");
         }
     }
 }
