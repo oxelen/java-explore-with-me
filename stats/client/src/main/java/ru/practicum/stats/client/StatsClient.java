@@ -8,6 +8,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.stats.dto.CreateHitDto;
+import ru.practicum.stats.dto.ResponseHitDto;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -17,8 +18,11 @@ import java.util.Map;
 public class StatsClient extends BaseClient {
     private final String appName;
 
-    public StatsClient(@Value("${ewm-stats-server-url}") String url, RestTemplateBuilder builder, String appName) {
-        super(builder.uriTemplateHandler(new DefaultUriBuilderFactory(url)).requestFactory(() -> new HttpComponentsClientHttpRequestFactory()).build());
+    public StatsClient(@Value("${ewm-stats-server-url}") String url,
+                       RestTemplateBuilder builder,
+                       @Value("${spring.application.name}") String appName) {
+        super(builder.uriTemplateHandler(new DefaultUriBuilderFactory(url)).requestFactory(()
+                -> new HttpComponentsClientHttpRequestFactory()).build());
         this.appName = appName;
     }
 

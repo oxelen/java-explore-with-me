@@ -8,8 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
+import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.service.EventService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/users/{userId}/events")
@@ -27,5 +30,16 @@ public class PrivateEventController {
         log.info("event created");
 
         return ResponseEntity.status(201).body(res);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<EventShortDto>> findByUser(@PositiveOrZero @PathVariable Long userId,
+                                                          @RequestParam(defaultValue = "0") int from,
+                                                          @RequestParam(defaultValue = "10") int size) {
+        log.info("GET events by user, id={}", userId);
+        List<EventShortDto> res = eventService.findByUser(userId, from, size);
+        log.info("events found");
+
+        return ResponseEntity.status(200).body(res);
     }
 }

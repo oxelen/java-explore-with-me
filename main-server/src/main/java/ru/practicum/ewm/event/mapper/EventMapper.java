@@ -5,6 +5,7 @@ import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.mapper.CategoryDtoMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.event.dto.EventFullDto;
+import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.Location;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.model.Event;
@@ -55,6 +56,20 @@ public class EventMapper {
                 .publishedOn(event.getPublishedOn())
                 .requestModeration(event.isRequestModeration())
                 .state(event.getState())
+                .title(event.getTitle())
+                .views(views)
+                .build();
+    }
+
+    public EventShortDto toEventShortDto(Event event, int confirmedRequests, int views) {
+        return EventShortDto.builder()
+                .annotation(event.getAnnotation())
+                .category(CategoryDtoMapper.toCategoryDto(event.getCategory()))
+                .confirmedRequests(confirmedRequests)
+                .eventDate(event.getEventDate())
+                .id(event.getId())
+                .initiator(UserDtoMapper.toUserShortDto(event.getInitiator()))
+                .paid(event.isPaid())
                 .title(event.getTitle())
                 .views(views)
                 .build();
