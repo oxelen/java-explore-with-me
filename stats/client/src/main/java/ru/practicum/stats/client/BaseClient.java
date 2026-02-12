@@ -1,4 +1,4 @@
-package ru.practicum.stats.client;
+/*package ru.practicum.stats.client;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -10,14 +10,14 @@ import ru.practicum.stats.dto.ResponseHitDto;
 
 import java.util.Map;
 
-class BaseClient {
+class BaseClient<T> {
     protected final RestTemplate rest;
 
     public BaseClient(RestTemplate rest) {
         this.rest = rest;
     }
 
-    private ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
+    private ResponseEntity<T> prepareGatewayResponse(ResponseEntity<T> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
             return response;
         }
@@ -31,7 +31,7 @@ class BaseClient {
         return responseBuilder.build();
     }
 
-    protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
+    protected ResponseEntity<T> get(String path, @Nullable Map<String, Object> parameters) {
         return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
     }
 
@@ -50,8 +50,8 @@ class BaseClient {
                 serverResponse = rest.exchange(path, method, requestEntity, Object.class);
             }
         } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).build();
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         }
         return prepareGatewayResponse(serverResponse);
     }
-}
+}*/

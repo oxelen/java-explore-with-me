@@ -3,9 +3,6 @@ package ru.practicum.ewm.event.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.model.Category;
@@ -15,8 +12,10 @@ import ru.practicum.ewm.event.dao.EventRepository;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
+import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
+import ru.practicum.ewm.request.dao.RequestRepository;
 import ru.practicum.ewm.user.dao.UserRepository;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.stats.client.StatsClient;
@@ -32,6 +31,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
+    private final RequestRepository requestRepository;
     private final StatsClient statsClient;
     private final ObjectMapper mapper;
 
@@ -47,7 +47,54 @@ public class EventServiceImpl implements EventService {
         findUserById(userId);
         List<Event> found = eventRepository.findByUser(userId, from, size);
 
-        return List.of();
+        return makeUnsortedShortDtoList(found);
+    }
+
+    @Override
+    public EventFullDto findById(Long userId, Long eventId) {
+        findUserById(userId);
+        Event found = getEvent(eventId);
+
+        return EventMapper.toFullEventDto(found, requestRepository.confirmedCount(eventId), getEventViews(eventId));
+    }
+
+    @Override
+    public EventFullDto update(Long userId, Long eventId, UpdateEventUserRequest updEvent) {
+        findUserById(userId);
+        Event old = getEvent(eventId);
+
+        return null;
+    }
+
+    private Event fillUpdEvent(Event old, UpdateEventUserRequest upd) {
+        if (upd.getAnnotation() != null) {
+            old.setAnnotation(upd.getAnnotation());
+        }
+        if (upd.getCategory() != null) {
+            old.setCategory(findCategoryById(upd.getCategory().longValue()));
+        }
+        if (upd.getDescription() != null) {
+            old.setDescription(upd.getDescription());
+        }
+        if (upd.getEventDate() != null) {
+            old.setEventDate(upd.getEventDate());
+        }
+        if (upd.getLocation() != null) {
+            old.setLocLat(upd.getLocation().lat());
+            old.setLocLon(upd.getLocation().lon());
+        }
+        if (upd.getPaid() != null) {
+            old.setPaid(upd.getPaid());
+        }
+        if ()
+    }
+
+    private Event getEvent(Long id) {
+        return eventRepository.findById(id).orElseThrow(()
+                -> {
+            log.warn("event not found, id={}", id);
+            return new NotFoundException("Event with id=" + id + " was not found");
+        });
     }
 
     private Event initEvent(Long userId, NewEventDto dto) {
@@ -80,11 +127,42 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private ResponseHitDto findHit(Long eventId) {
-        String uri = "/events" + eventId;
-        ResponseEntity<Object> found = statsClient.findHits(LocalDateTime.MIN,
-                LocalDateTime.MAX,
-                new String[]{uri},
-                false);
+    private List<EventShortDto> makeUnsortedShortDtoList(List<Event> events) {
+        return events.stream()
+                .map(event ->
+                        EventMapper.toEventShortDto(event,
+                                requestRepository.confirmedCount(event.getId()),
+                                getEventViews(event.getId()))
+                )
+                .toList();
     }
+
+    private List<ResponseHitDto> findStats(String[] uris) {
+        return statsClient.findStats(LocalDateTime.MIN,
+                LocalDateTime.MAX,
+                uris,
+                false).getBody();
+    }
+
+    private int getEventViews(Long eventId) {
+        String[] uris = new String[]{"/events/" + eventId};
+        List<ResponseHitDto> found = findStats(uris);
+
+        return found == null || found.isEmpty() ? 0 : found.getFirst().getHits().intValue();
+    }
+
+    /*private Map<Long, Integer> getEventsViews(List<Event> events) {
+        String[] uris = events.stream()
+                .map(event -> "/events/" + event.getId())
+                .toArray(String[]::new);
+
+        Map<Long, Integer> eventViews = new HashMap<>();
+        for (ResponseHitDto stat : findStats(uris)) {
+            String uri = stat.getUri();
+            Long id = Long.parseLong(uri.substring(uri.length() - 1));
+            eventViews.put(id, stat.getHits().intValue());
+        }
+
+        return eventViews;
+    }*/
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
+import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.service.EventService;
 
 import java.util.List;
@@ -39,6 +40,27 @@ public class PrivateEventController {
         log.info("GET events by user, id={}", userId);
         List<EventShortDto> res = eventService.findByUser(userId, from, size);
         log.info("events found");
+
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @GetMapping("/{eventId}")
+    public ResponseEntity<EventFullDto> findById(@PositiveOrZero @PathVariable Long userId,
+                                                 @PositiveOrZero @PathVariable Long eventId) {
+        log.info("GET events by id, id={}", eventId);
+        EventFullDto res = eventService.findById(userId, eventId);
+        log.info("event found, id={}", eventId);
+
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @PatchMapping("/{eventId}")
+    public ResponseEntity<EventFullDto> updateEvent(@PositiveOrZero @PathVariable Long userId,
+                                                    @PositiveOrZero @PathVariable Long eventId,
+                                                    @Valid @RequestBody UpdateEventUserRequest updEvent) {
+        log.info("PATCH event, id={}", eventId);
+        EventFullDto res = eventService.update(userId, eventId, updEvent);
+        log.info("event updated, id={}", eventId);
 
         return ResponseEntity.status(200).body(res);
     }
