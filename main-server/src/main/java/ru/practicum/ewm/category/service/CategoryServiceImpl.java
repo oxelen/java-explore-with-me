@@ -12,6 +12,8 @@ import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
 import ru.practicum.ewm.event.dao.EventRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -27,7 +29,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto update(Long catId, NewCategoryRequest newCategoryRequest) {
-        checkId(catId);
+        getCategory(catId);
 
         Category cat = CategoryDtoMapper.toCategory(newCategoryRequest);
         cat.setId(catId);
@@ -37,7 +39,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void delete(Long catId) {
-        checkId(catId);
+        getCategory(catId);
 
         if (eventRepository.findCountByCategory(catId) != 0) {
             log.warn("category is not empty");
@@ -48,11 +50,20 @@ public class CategoryServiceImpl implements CategoryService {
         catRepository.deleteById(catId);
     }
 
-    private void checkId(Long catId) {
-        if (catRepository.findById(catId).isEmpty()) {
+    @Override
+    public List<CategoryDto> findAll(int from, int size) {
+        return CategoryDtoMapper.toCategoryDto(catRepository.findAll(from, size));
+    }
+
+    @Override
+    public CategoryDto findById(Long catId) {
+        return CategoryDtoMapper.toCategoryDto(getCategory(catId));
+    }
+
+    private Category getCategory(Long catId) {
+        return catRepository.findById(catId).orElseThrow(() -> {
             log.warn("Category with id = {} does not found", catId);
-            throw new NotFoundException("Category with id=" + catId + " not found");
-        }
-        log.trace("Category with id = {} exists", catId);
+            return new NotFoundException("Category with id=" + catId + " not found");
+        });
     }
 }

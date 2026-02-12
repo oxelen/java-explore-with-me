@@ -14,6 +14,7 @@ import ru.practicum.ewm.user.mapper.UserDtoMapper;
 import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class EventMapper {
     public static Event toEvent(NewEventDto dto, Category category, User initiator) {

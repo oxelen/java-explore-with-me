@@ -1,5 +1,7 @@
 package ru.practicum.ewm.event.dto;
 
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,8 +32,9 @@ public class UpdateEventUserRequest {
 
     private Location location;
     private Boolean paid;
+    @PositiveOrZero
     private Integer participantLimit;
-    private boolean requestModeration;
+    private Boolean requestModeration;
     private StateActionUser stateAction;
 
     @StringLength(min = TITLE_MIN_LENGTH, max = TITLE_MAX_LENGTH)

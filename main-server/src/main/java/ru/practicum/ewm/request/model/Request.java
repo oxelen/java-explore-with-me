@@ -33,5 +33,5 @@ public class Request {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private State status;
+    private Status status;
 }

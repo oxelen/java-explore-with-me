@@ -13,10 +13,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.ResponseEntity;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
-import ru.practicum.ewm.event.dto.EventFullDto;
-import ru.practicum.ewm.event.dto.EventShortDto;
-import ru.practicum.ewm.event.dto.Location;
-import ru.practicum.ewm.event.dto.NewEventDto;
+import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.user.model.User;
@@ -103,6 +100,37 @@ public class EventServiceImplTest {
 
         assertThat(found, notNullValue());
         assertThat(found.getId(), equalTo(created.getId()));
+    }
+
+    @Test
+    public void updateTest() {
+        when(statsClient.findStats(any(), any(), any(), anyBoolean()))
+                .thenReturn(ResponseEntity.status(200).body(new ArrayList<>()));
+
+        NewEventDto createDto = getDefaultDto();
+        EventFullDto created = eventService.create(user.getId(), createDto);
+
+        UpdateEventUserRequest updDto = getUpdDto();
+        EventFullDto updated = eventService.update(user.getId(), created.getId(), updDto);
+
+        assertThat(updated, notNullValue());
+        assertThat(updated.getId(), equalTo(created.getId()));
+        assertThat(updated.getAnnotation(), equalTo(updDto.getAnnotation()));
+    }
+
+    private UpdateEventUserRequest getUpdDto() {
+        return UpdateEventUserRequest.builder()
+                .annotation("updAnnotation")
+                .category(cat.getId().intValue())
+                .description("updDescription")
+                .eventDate(LocalDateTime.now().plusHours(4))
+                .location(new Location(1.2f, 1.2f))
+                .paid(true)
+                .participantLimit(10)
+                .requestModeration(true)
+                .stateAction(StateActionUser.CANCEL_REVIEW)
+                .title("updTitle")
+                .build();
     }
 
     private NewEventDto getDefaultDto() {

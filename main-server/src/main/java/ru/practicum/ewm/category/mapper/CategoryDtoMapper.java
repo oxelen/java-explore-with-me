@@ -1,8 +1,11 @@
 package ru.practicum.ewm.category.mapper;
 
+import org.apache.catalina.LifecycleState;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.dto.NewCategoryRequest;
 import ru.practicum.ewm.category.model.Category;
+
+import java.util.List;
 
 public class CategoryDtoMapper {
     public static Category toCategory(NewCategoryRequest dto) {
@@ -16,5 +19,9 @@ public class CategoryDtoMapper {
                 .id(category.getId())
                 .name(category.getName())
                 .build();
+    }
+
+    public static List<CategoryDto> toCategoryDto(List<Category> categories) {
+        return categories.stream().map(CategoryDtoMapper::toCategoryDto).toList();
     }
 }

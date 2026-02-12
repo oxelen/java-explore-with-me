@@ -1,6 +1,8 @@
 package ru.practicum.ewm.event.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintDeclarationException;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,20 +11,26 @@ import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
 import ru.practicum.ewm.event.dao.EventRepository;
-import ru.practicum.ewm.event.dto.EventFullDto;
-import ru.practicum.ewm.event.dto.EventShortDto;
-import ru.practicum.ewm.event.dto.NewEventDto;
-import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
+import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
+import ru.practicum.ewm.event.model.State;
 import ru.practicum.ewm.request.dao.RequestRepository;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.request.mapper.RequestDtoMapper;
+import ru.practicum.ewm.request.model.Request;
+import ru.practicum.ewm.request.model.Status;
 import ru.practicum.ewm.user.dao.UserRepository;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.stats.client.StatsClient;
 import ru.practicum.stats.dto.ResponseHitDto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 @Service
 @Slf4j
@@ -54,16 +62,113 @@ public class EventServiceImpl implements EventService {
     public EventFullDto findById(Long userId, Long eventId) {
         findUserById(userId);
         Event found = getEvent(eventId);
+        checkUserIsInitiator(userId, found);
 
-        return EventMapper.toFullEventDto(found, requestRepository.confirmedCount(eventId), getEventViews(eventId));
+        return EventMapper.toFullEventDto(found, getConfirmedCount(eventId), getEventViews(eventId));
     }
 
     @Override
-    public EventFullDto update(Long userId, Long eventId, UpdateEventUserRequest updEvent) {
+    public EventFullDto update(Long userId, Long eventId, UpdateEventUserRequest updEventDto) {
         findUserById(userId);
         Event old = getEvent(eventId);
+        checkUserIsInitiator(userId, old);
 
-        return null;
+        if (old.getState().equals(State.PUBLISHED)) {
+            log.warn("even must not be published");
+            throw new ConstraintDeclarationException("Even must not be published");
+        }
+
+        Event saved = eventRepository.save(fillUpdEvent(old, updEventDto));
+
+        return EventMapper.toFullEventDto(
+                saved,
+                getConfirmedCount(saved.getId()),
+                getEventViews(saved.getId())
+        );
+    }
+
+    @Override
+    public List<ParticipationRequestDto> getParticipantRequests(Long userId, Long eventId) {
+        findUserById(userId);
+        Event event = getEvent(eventId);
+        checkUserIsInitiator(userId, event);
+
+        List<Request> found = findRequestsByEventId(eventId);
+
+        return RequestDtoMapper.toParticipantRequestDto(found);
+    }
+
+    @Override
+    public EventRequestStatusUpdateResult patchRequestStatus(Long userId, Long eventId, EventRequestStatusUpdateRequest requests) {
+        findUserById(userId);
+        Event event = getEvent(eventId);
+        checkUserIsInitiator(userId, event);
+
+        if (event.getPartLimit() == getConfirmedCount(eventId)) {
+            log.warn("The participant limit has been reached");
+            throw new ConditionsNotMetException("The participant limit has been reached");
+        }
+
+        Queue<Request> found = requestRepository.findRequestsByIds(eventId, requests.getRequestIds());
+        found.forEach(req -> {
+            if (!req.getStatus().equals(Status.PENDING)) {
+                log.warn("Request must have status PENDING, requestId={}", req.getId());
+                throw new ValidationException("Request must have status PENDING");
+            }
+        });
+
+        while (found.peek() != null) {
+            Request req = found.poll();
+
+            if (requests.getStatus().equals(Status.CONFIRMED) && event.getPartLimit() == getConfirmedCount(eventId)) {
+                log.debug("The participant limit has been reached, remaining requests will be rejected");
+
+                found.forEach(rejectReq -> {
+                    rejectReq.setStatus(Status.REJECTED);
+                    requestRepository.save(rejectReq);
+                });
+                break;
+            }
+
+            req.setStatus(requests.getStatus());
+            requestRepository.save(req);
+        }
+
+        return getEventRequestStatusUpdateResult(eventId);
+    }
+
+    private EventRequestStatusUpdateResult getEventRequestStatusUpdateResult(Long eventId) {
+        List<ParticipationRequestDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestDto> rejected = new ArrayList<>();
+
+        findRequestsByEventId(eventId).forEach(req -> {
+            switch (req.getStatus()) {
+                case Status.CONFIRMED:
+                    confirmed.add(RequestDtoMapper.toParticipantRequestDto(req));
+                    break;
+                case Status.REJECTED:
+                    rejected.add(RequestDtoMapper.toParticipantRequestDto(req));
+            }
+        });
+
+        return new EventRequestStatusUpdateResult(confirmed, rejected);
+    }
+
+    private List<Request> findRequestsByEventId(Long eventId) {
+        return requestRepository.findAllByEventId(eventId);
+    }
+
+    private void checkUserIsInitiator(Long userId, Event event) {
+        if (!event.getInitiator().getId().equals(userId)) {
+            log.warn("user id={} is not initiator of event id={}", userId, event.getId());
+            throw new ConditionsNotMetException(
+                    String.format("user id=%d is not initiator of event id=%d", userId, event.getId())
+            );
+        }
+    }
+
+    private int getConfirmedCount(Long eventId) {
+        return requestRepository.confirmedCount(eventId);
     }
 
     private Event fillUpdEvent(Event old, UpdateEventUserRequest upd) {
@@ -76,8 +181,11 @@ public class EventServiceImpl implements EventService {
         if (upd.getDescription() != null) {
             old.setDescription(upd.getDescription());
         }
-        if (upd.getEventDate() != null) {
-            old.setEventDate(upd.getEventDate());
+
+        LocalDateTime eventDate = upd.getEventDate();
+        if (eventDate != null) {
+            checkEventDate(eventDate);
+            old.setEventDate(eventDate);
         }
         if (upd.getLocation() != null) {
             old.setLocLat(upd.getLocation().lat());
@@ -86,7 +194,25 @@ public class EventServiceImpl implements EventService {
         if (upd.getPaid() != null) {
             old.setPaid(upd.getPaid());
         }
-        if ()
+        if (upd.getParticipantLimit() != null) {
+            old.setPartLimit(upd.getParticipantLimit());
+        }
+        if (upd.getRequestModeration() != null) {
+            old.setRequestModeration(upd.getRequestModeration());
+        }
+        if (upd.getStateAction() != null) {
+            old.setState(
+                    switch (upd.getStateAction()) {
+                        case StateActionUser.SEND_TO_REVIEW -> State.PENDING;
+                        case StateActionUser.CANCEL_REVIEW -> State.CANCELED;
+                    }
+            );
+        }
+        if (upd.getTitle() != null) {
+            old.setTitle(upd.getTitle());
+        }
+
+        return old;
     }
 
     private Event getEvent(Long id) {
