@@ -1,10 +1,15 @@
 package ru.practicum.ewm.event.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import jakarta.validation.ConstraintDeclarationException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.model.Category;
@@ -14,7 +19,9 @@ import ru.practicum.ewm.event.dao.EventRepository;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
+import ru.practicum.ewm.event.model.QEvent;
 import ru.practicum.ewm.event.model.State;
+import ru.practicum.ewm.event.util.FindAllRequestParams;
 import ru.practicum.ewm.request.dao.RequestRepository;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
@@ -55,7 +62,7 @@ public class EventServiceImpl implements EventService {
         findUserById(userId);
         List<Event> found = eventRepository.findByUser(userId, from, size);
 
-        return makeUnsortedShortDtoList(found);
+        return makeShortDtoList(found);
     }
 
     @Override
@@ -135,6 +142,47 @@ public class EventServiceImpl implements EventService {
         }
 
         return getEventRequestStatusUpdateResult(eventId);
+    }
+
+    @Override
+    public List<EventFullDto> findAllAdmin(FindAllRequestParams params) {
+        if (params.getRangeEnd() != null && params.getRangeStart() != null
+                && params.getRangeStart().isAfter(params.getRangeEnd())) {
+            log.warn("range start cant be after range end");
+            throw new ValidationException("range start cant be after range end");
+        }
+
+        BooleanExpression byUsers = params.getUsers() == null
+                ? Expressions.TRUE
+                : QEvent.event.initiator.id.in(params.getUsers());
+
+        BooleanExpression byStates = params.getStates() == null
+                ? Expressions.TRUE
+                : QEvent.event.state.in(params.getStates());
+
+        BooleanExpression byCategories = params.getCategories() == null
+                ? Expressions.TRUE
+                : QEvent.event.category.id.in(params.getCategories());
+
+        BooleanExpression byRangeStart = params.getRangeStart() == null
+                ? Expressions.TRUE
+                : QEvent.event.eventDate.after(params.getRangeStart());
+
+        BooleanExpression byRangeEnd = params.getRangeEnd() == null
+                ? Expressions.TRUE
+                : QEvent.event.eventDate.before(params.getRangeEnd());
+
+        Page<Event> found = eventRepository.findAll(
+                byUsers.and(byStates).and(byCategories).and(byRangeEnd).and(byRangeStart),
+                PageRequest.of(0, params.getFrom() + params.getSize(), Sort.by(Sort.Direction.ASC, "eventDate"))
+        );
+
+        return makeFullDtoList(
+                found.getContent().stream()
+                        .skip(params.getFrom())
+                        .limit(params.getSize())
+                        .toList()
+        );
     }
 
     private EventRequestStatusUpdateResult getEventRequestStatusUpdateResult(Long eventId) {
@@ -253,10 +301,20 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private List<EventShortDto> makeUnsortedShortDtoList(List<Event> events) {
+    private List<EventShortDto> makeShortDtoList(List<Event> events) {
         return events.stream()
                 .map(event ->
                         EventMapper.toEventShortDto(event,
+                                requestRepository.confirmedCount(event.getId()),
+                                getEventViews(event.getId()))
+                )
+                .toList();
+    }
+
+    private List<EventFullDto> makeFullDtoList(List<Event> events) {
+        return events.stream()
+                .map(event ->
+                        EventMapper.toFullEventDto(event,
                                 requestRepository.confirmedCount(event.getId()),
                                 getEventViews(event.getId()))
                 )

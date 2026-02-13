@@ -8,12 +8,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.user.dto.NewUserRequest;
 import ru.practicum.ewm.user.dto.UserDto;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.service.UserService;
+import ru.practicum.stats.client.StatsClient;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,9 @@ public class UserServiceImplTest {
     private final EntityManager em;
 
     private final UserService userService;
+
+    @MockBean
+    private StatsClient statsClient;
 
     @Test
     public void createUserTest() {

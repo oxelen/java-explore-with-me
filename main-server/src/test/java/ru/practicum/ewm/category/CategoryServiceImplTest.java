@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.dto.NewCategoryRequest;
 import ru.practicum.ewm.category.model.Category;
@@ -15,6 +16,7 @@ import ru.practicum.ewm.category.service.CategoryService;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.util.EntityGetter;
+import ru.practicum.stats.client.StatsClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -31,6 +33,9 @@ public class CategoryServiceImplTest {
     private final CategoryService categoryService;
 
     private final EntityGetter eg;
+
+    @MockBean
+    private StatsClient statsClient;
 
     @Test
     public void createTest() {

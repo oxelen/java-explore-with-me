@@ -60,6 +60,27 @@ public class CompilationServiceImpl implements CompilationService {
         );
     }
 
+    @Override
+    public List<CompilationDto> findAll(Boolean pinned, int from, int size) {
+        List<Compilation> found = pinned == null
+                ? compilationRepository.findAll(from, size)
+                : compilationRepository.findAllPinned(pinned, from, size);
+
+        return found.stream()
+                .map(comp
+                        -> CompilationDtoMapper.toCompilationDto(
+                                comp, makeUnsortedShortDtoList(comp.getEvents())
+                ))
+                .toList();
+    }
+
+    @Override
+    public CompilationDto findById(Long compId) {
+        Compilation res = getById(compId);
+        Set<Event> events = res.getEvents();
+        return CompilationDtoMapper.toCompilationDto(res, makeUnsortedShortDtoList(events));
+    }
+
     private Compilation fillUpdCompilation(Compilation old, UpdateCompilationRequest upd) {
         if (upd.getEvents() != null) {
             old.setEvents(getEventsFromDto(upd.getEvents()));

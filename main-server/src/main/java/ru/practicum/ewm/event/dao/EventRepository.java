@@ -2,11 +2,12 @@ package ru.practicum.ewm.event.dao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.ewm.event.model.Event;
 
 import java.util.List;
 
-public interface EventRepository extends JpaRepository<Event, Long> {
+public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPredicateExecutor<Event> {
     @Query("select count(e.category) " +
             "from Event e " +
             "where e.category.id = :catId")

@@ -15,3 +15,8 @@ spring:
   sql.init.mode: always
   application:
     name: "ewm-main-service"
+
+ewm:
+  stats:
+    server:
+      url: http://stats:9090

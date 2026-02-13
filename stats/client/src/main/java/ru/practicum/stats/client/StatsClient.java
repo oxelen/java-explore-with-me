@@ -23,11 +23,10 @@ public class StatsClient/* extends BaseClient */{
     private final String appName;
     private final RestTemplate rest;
 
-    public StatsClient(@Value("${ewm-stats-server-url}") String url,
+    public StatsClient(@Value("${ewm.stats.server.url}") String url,
                        RestTemplateBuilder builder,
                        @Value("${spring.application.name}") String appName) {
-        this.rest = builder.uriTemplateHandler(new DefaultUriBuilderFactory(url)).requestFactory(()
-                -> new HttpComponentsClientHttpRequestFactory()).build();
+        this.rest = builder.uriTemplateHandler(new DefaultUriBuilderFactory(url)).build();
         this.appName = appName;
     }
 
