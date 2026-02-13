@@ -1,14 +1,14 @@
 package ru.practicum.ewm.event.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
+import ru.practicum.ewm.event.dto.UpdateEventAdminRequest;
 import ru.practicum.ewm.event.model.State;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.event.util.FindAllRequestParams;
@@ -47,6 +47,18 @@ public class AdminEventController {
         log.info("GET all events, params: {}", requestParams.toString());
         List<EventFullDto> res = eventService.findAllAdmin(requestParams);
         log.info("events found");
+        return ResponseEntity.ok(res);
+    }
+
+    @PatchMapping("/{eventId}")
+    public ResponseEntity<EventFullDto> updateEventAdmin(
+            @PositiveOrZero @PathVariable Long eventId,
+            @Valid @RequestBody UpdateEventAdminRequest updEvent
+    ) {
+        log.info("PATCH event, id={}", eventId);
+        EventFullDto res = eventService.update(eventId, updEvent);
+        log.info("event id={} patched", eventId);
+
         return ResponseEntity.ok(res);
     }
 }

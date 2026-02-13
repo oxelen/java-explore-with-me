@@ -64,7 +64,7 @@ public class PrivateEventController {
     }
 
     @PatchMapping("/{eventId}")
-    public ResponseEntity<EventFullDto> updateEvent(
+    public ResponseEntity<EventFullDto> updateEventPrivate(
             @PositiveOrZero @PathVariable Long userId,
             @PositiveOrZero @PathVariable Long eventId,
             @Valid @RequestBody UpdateEventUserRequest updEvent

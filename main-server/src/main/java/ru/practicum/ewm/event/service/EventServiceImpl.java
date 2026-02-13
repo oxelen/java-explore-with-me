@@ -1,12 +1,14 @@
 package ru.practicum.ewm.event.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import jakarta.validation.ConstraintDeclarationException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.sql.ast.tree.predicate.BooleanExpressionPredicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,7 +23,9 @@ import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.model.QEvent;
 import ru.practicum.ewm.event.model.State;
+import ru.practicum.ewm.event.util.FindAllPublicParams;
 import ru.practicum.ewm.event.util.FindAllRequestParams;
+import ru.practicum.ewm.event.util.UpdateEventCommonFields;
 import ru.practicum.ewm.request.dao.RequestRepository;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
@@ -85,7 +89,85 @@ public class EventServiceImpl implements EventService {
             throw new ConstraintDeclarationException("Even must not be published");
         }
 
-        Event saved = eventRepository.save(fillUpdEvent(old, updEventDto));
+        UpdateEventCommonFields upd = UpdateEventCommonFields.builder()
+                .annotation(updEventDto.getAnnotation())
+                .category(updEventDto.getCategory())
+                .description(updEventDto.getDescription())
+                .eventDate(updEventDto.getEventDate())
+                .location(updEventDto.getLocation())
+                .paid(updEventDto.getPaid())
+                .participantLimit(updEventDto.getParticipantLimit())
+                .requestModeration(updEventDto.getRequestModeration())
+                .title(updEventDto.getTitle())
+                .build();
+
+        Event filled = fillUpdEvent(old, upd);
+
+        if (updEventDto.getStateAction() != null) {
+            filled.setState(
+                    switch (updEventDto.getStateAction()) {
+                        case StateActionUser.SEND_TO_REVIEW -> State.PENDING;
+                        case StateActionUser.CANCEL_REVIEW -> State.CANCELED;
+                    }
+            );
+        }
+
+        Event saved = eventRepository.save(filled);
+
+        return EventMapper.toFullEventDto(
+                saved,
+                getConfirmedCount(saved.getId()),
+                getEventViews(saved.getId())
+        );
+    }
+
+    @Override
+    public EventFullDto update(Long eventId, UpdateEventAdminRequest updEventDto) {
+        Event old = getEvent(eventId);
+
+        UpdateEventCommonFields upd = UpdateEventCommonFields.builder()
+                .annotation(updEventDto.getAnnotation())
+                .category(updEventDto.getCategory())
+                .description(updEventDto.getDescription())
+                .eventDate(updEventDto.getEventDate())
+                .location(updEventDto.getLocation())
+                .paid(updEventDto.getPaid())
+                .participantLimit(updEventDto.getParticipantLimit())
+                .requestModeration(updEventDto.getRequestModeration())
+                .title(updEventDto.getTitle())
+                .build();
+
+        Event filled = fillUpdEvent(old, upd);
+
+        filled.setState(
+                switch(updEventDto.getStateAction()) {
+                    case StateActionAdmin.PUBLISH_EVENT -> {
+                        if (filled.getEventDate().isBefore(LocalDateTime.now().minusHours(1))) {
+                            log.warn("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+                            throw new ConditionsNotMetException("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+                        }
+
+                        if (!filled.getState().equals(State.PUBLISHED)) {
+                            log.warn("Cannot publish the event because it's not in the right state: PUBLISHED");
+                            throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PUBLISHED");
+                        }
+
+                        filled.setPublishedOn(LocalDateTime.now());
+                        yield State.PENDING;
+                    }
+
+                    case StateActionAdmin.REJECT_EVENT -> {
+                        if (filled.getState().equals(State.PUBLISHED)) {
+                            log.warn("Cannot publish the event because it's not in the right state: PENDING");
+                            throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PENDING");
+                        }
+
+                        yield State.CANCELED;
+                    }
+                }
+        );
+
+        Event saved = eventRepository.save(filled);
 
         return EventMapper.toFullEventDto(
                 saved,
@@ -185,6 +267,17 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    @Override
+    public List<EventShortDto> findAllPublic(FindAllPublicParams params) {
+        BooleanExpression predicate = getPredicateForFindAllPublic(params);
+
+        return List.of();
+    }
+
+    private BooleanExpression getPredicateForFindAllPublic(FindAllPublicParams params) {
+        BooleanExpressionPredicate res =
+    }
+
     private EventRequestStatusUpdateResult getEventRequestStatusUpdateResult(Long eventId) {
         List<ParticipationRequestDto> confirmed = new ArrayList<>();
         List<ParticipationRequestDto> rejected = new ArrayList<>();
@@ -219,7 +312,7 @@ public class EventServiceImpl implements EventService {
         return requestRepository.confirmedCount(eventId);
     }
 
-    private Event fillUpdEvent(Event old, UpdateEventUserRequest upd) {
+    private Event fillUpdEvent(Event old, UpdateEventCommonFields upd) {
         if (upd.getAnnotation() != null) {
             old.setAnnotation(upd.getAnnotation());
         }
@@ -247,14 +340,6 @@ public class EventServiceImpl implements EventService {
         }
         if (upd.getRequestModeration() != null) {
             old.setRequestModeration(upd.getRequestModeration());
-        }
-        if (upd.getStateAction() != null) {
-            old.setState(
-                    switch (upd.getStateAction()) {
-                        case StateActionUser.SEND_TO_REVIEW -> State.PENDING;
-                        case StateActionUser.CANCEL_REVIEW -> State.CANCELED;
-                    }
-            );
         }
         if (upd.getTitle() != null) {
             old.setTitle(upd.getTitle());
