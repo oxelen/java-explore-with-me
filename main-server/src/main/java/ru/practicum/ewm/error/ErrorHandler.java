@@ -6,23 +6,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
 import ru.practicum.ewm.error.exception.ValidationException;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @RestControllerAdvice
 public class ErrorHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ApiError>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        final HttpStatus status =HttpStatus.BAD_REQUEST;
+        final HttpStatus status = HttpStatus.BAD_REQUEST;
         List<ApiError> errors = new ArrayList<>();
 
         ex.getBindingResult().getAllErrors().forEach((error) -> {

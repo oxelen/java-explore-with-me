@@ -19,7 +19,6 @@ import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.util.EntityGetter;
 import ru.practicum.stats.client.StatsClient;
-import ru.practicum.stats.dto.ResponseHitDto;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

@@ -1,22 +1,19 @@
 package ru.practicum.ewm.event.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.event.util.FindAllPublicParams;
-import ru.practicum.ewm.event.util.FindAllRequestParams;
 import ru.practicum.ewm.event.util.SortFilters;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/events")
@@ -53,6 +50,16 @@ public class PublicEventController {
 
         List<EventShortDto> res = eventService.findAllPublic(params, request);
         log.info("events found");
+
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EventFullDto> findByIdPublic(@PositiveOrZero @PathVariable Long id,
+                                                       HttpServletRequest request) {
+        log.info("GET event by id public, id={}", id);
+        EventFullDto res = eventService.findByIdPublic(id, request);
+        log.info("event with id={} found", id);
 
         return ResponseEntity.ok(res);
     }

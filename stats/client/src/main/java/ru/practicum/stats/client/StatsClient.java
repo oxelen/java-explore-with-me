@@ -6,7 +6,6 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
@@ -19,7 +18,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class StatsClient/* extends BaseClient */{
+public class StatsClient {
     private final String appName;
     private final RestTemplate rest;
 
@@ -47,7 +46,8 @@ public class StatsClient/* extends BaseClient */{
         return rest.exchange("/hits?end={end}&uris={uris}&unique={unique}",
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ResponseHitDto>>() {},
+                new ParameterizedTypeReference<List<ResponseHitDto>>() {
+                },
                 params);
     }
 }

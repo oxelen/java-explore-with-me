@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.ewm.event.model.Event;
-import ru.practicum.ewm.event.model.State;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.util.DateTimePattern;
 
@@ -13,7 +12,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "requests", schema = "public")
-@Getter @Setter
+@Getter
+@Setter
 public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -2,7 +2,6 @@ package ru.practicum.ewm.event.util;
 
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
 

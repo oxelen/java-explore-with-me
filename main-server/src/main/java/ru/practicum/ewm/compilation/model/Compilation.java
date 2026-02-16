@@ -9,7 +9,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "compilations", schema = "public")
-@Getter @Setter
+@Getter
+@Setter
 public class Compilation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,6 +1,5 @@
 package ru.practicum.ewm.event.dto;
 
-import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

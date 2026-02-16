@@ -30,7 +30,7 @@ import ru.practicum.ewm.request.dao.RequestRepository;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
-import ru.practicum.ewm.request.mapper.RequestDtoMapper;
+import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.Request;
 import ru.practicum.ewm.request.model.Status;
 import ru.practicum.ewm.user.dao.UserRepository;
@@ -141,7 +141,7 @@ public class EventServiceImpl implements EventService {
         Event filled = fillUpdEvent(old, upd);
 
         filled.setState(
-                switch(updEventDto.getStateAction()) {
+                switch (updEventDto.getStateAction()) {
                     case StateActionAdmin.PUBLISH_EVENT -> {
                         if (filled.getEventDate().isBefore(LocalDateTime.now().minusHours(1))) {
                             log.warn("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
@@ -185,7 +185,7 @@ public class EventServiceImpl implements EventService {
 
         List<Request> found = findRequestsByEventId(eventId);
 
-        return RequestDtoMapper.toParticipantRequestDto(found);
+        return RequestMapper.toParticipantRequestDto(found);
     }
 
     @Override
@@ -311,6 +311,18 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
+    @Override
+    public EventFullDto findByIdPublic(Long id, HttpServletRequest request) {
+        Event event = getEvent(id);
+        if (!event.getState().equals(State.PUBLISHED)) {
+            log.warn("event id={} not published", id);
+        }
+
+        statsClient.hit(CreateHitDto.builder().uri(request.getRequestURI()).ip(request.getRemoteAddr()).build());
+
+        return EventMapper.toFullEventDto(event, getConfirmedCount(id), getEventViews(id));
+    }
+
     private BooleanExpression getPredicateForFindAllPublic(FindAllPublicParams params) {
         BooleanExpression byPublished = QEvent.event.state.eq(State.PUBLISHED);
         BooleanExpression byText = getByText(params.getText());
@@ -360,10 +372,10 @@ public class EventServiceImpl implements EventService {
         findRequestsByEventId(eventId).forEach(req -> {
             switch (req.getStatus()) {
                 case Status.CONFIRMED:
-                    confirmed.add(RequestDtoMapper.toParticipantRequestDto(req));
+                    confirmed.add(RequestMapper.toParticipantRequestDto(req));
                     break;
                 case Status.REJECTED:
-                    rejected.add(RequestDtoMapper.toParticipantRequestDto(req));
+                    rejected.add(RequestMapper.toParticipantRequestDto(req));
             }
         });
 

@@ -2,7 +2,6 @@ package ru.practicum.ewm.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.error.exception.NotFoundException;
@@ -13,12 +12,11 @@ import ru.practicum.ewm.user.mapper.UserDtoMapper;
 import ru.practicum.ewm.user.model.User;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override

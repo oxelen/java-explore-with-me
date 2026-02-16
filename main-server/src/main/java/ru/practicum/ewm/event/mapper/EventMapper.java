@@ -1,7 +1,5 @@
 package ru.practicum.ewm.event.mapper;
 
-import lombok.RequiredArgsConstructor;
-import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.mapper.CategoryDtoMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.event.dto.EventFullDto;
@@ -14,7 +12,6 @@ import ru.practicum.ewm.user.mapper.UserDtoMapper;
 import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class EventMapper {
     public static Event toEvent(NewEventDto dto, Category category, User initiator) {

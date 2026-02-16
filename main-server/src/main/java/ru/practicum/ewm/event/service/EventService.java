@@ -28,4 +28,6 @@ public interface EventService {
     List<EventFullDto> findAllAdmin(FindAllRequestParams params);
 
     List<EventShortDto> findAllPublic(FindAllPublicParams params, HttpServletRequest request);
+
+    EventFullDto findByIdPublic(Long id, HttpServletRequest request);
 }

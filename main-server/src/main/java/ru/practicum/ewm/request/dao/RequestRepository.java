@@ -2,7 +2,9 @@ package ru.practicum.ewm.request.dao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.request.model.Request;
+import ru.practicum.ewm.user.model.User;
 
 import java.util.List;
 import java.util.Queue;
@@ -24,4 +26,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "where r.event.id = :eventId and r.id in :ids " +
             "order by r.created asc")
     Queue<Request> findRequestsByIds(Long eventId, List<Long> ids);
+
+    List<Request> findAllByEvent(Event event);
+
+    List<Request> findAllByRequester(User requester);
 }

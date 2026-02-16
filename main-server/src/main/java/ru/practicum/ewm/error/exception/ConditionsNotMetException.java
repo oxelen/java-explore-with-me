@@ -1,6 +1,6 @@
 package ru.practicum.ewm.error.exception;
 
-public class ConditionsNotMetException extends RuntimeException{
+public class ConditionsNotMetException extends RuntimeException {
     public ConditionsNotMetException(String msg) {
         super(msg);
     }
