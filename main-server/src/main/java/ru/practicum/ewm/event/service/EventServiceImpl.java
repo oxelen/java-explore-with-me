@@ -1,14 +1,13 @@
 package ru.practicum.ewm.event.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintDeclarationException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.sql.ast.tree.predicate.BooleanExpressionPredicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -25,6 +24,7 @@ import ru.practicum.ewm.event.model.QEvent;
 import ru.practicum.ewm.event.model.State;
 import ru.practicum.ewm.event.util.FindAllPublicParams;
 import ru.practicum.ewm.event.util.FindAllRequestParams;
+import ru.practicum.ewm.event.util.SortFilters;
 import ru.practicum.ewm.event.util.UpdateEventCommonFields;
 import ru.practicum.ewm.request.dao.RequestRepository;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
@@ -36,6 +36,7 @@ import ru.practicum.ewm.request.model.Status;
 import ru.practicum.ewm.user.dao.UserRepository;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.stats.client.StatsClient;
+import ru.practicum.stats.dto.CreateHitDto;
 import ru.practicum.stats.dto.ResponseHitDto;
 
 import java.time.LocalDateTime;
@@ -268,14 +269,88 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> findAllPublic(FindAllPublicParams params) {
+    public List<EventShortDto> findAllPublic(FindAllPublicParams params, HttpServletRequest request) {
         BooleanExpression predicate = getPredicateForFindAllPublic(params);
 
-        return List.of();
+        Sort sort = params.getSort() == null || params.getSort().equals(SortFilters.EVENT_DATE)
+                ? Sort.by(Sort.Direction.DESC, "eventDate")
+                : Sort.by(Sort.Direction.DESC, "views");
+
+        Iterable<Event> found = eventRepository.findAll(predicate);
+
+        List<EventShortDto> result = new ArrayList<>();
+
+        for (Event event : found) {
+            int confirmedRequests = getConfirmedCount(event.getId());
+            if (!(params.getOnlyAvailable() && event.getPartLimit() > confirmedRequests)) {
+                continue;
+            }
+            result.add(EventMapper.toEventShortDto(event, confirmedRequests, getEventViews(event.getId())));
+        }
+
+        result = result.stream()
+                .sorted((event1, event2) -> {
+                    if (params.getSort() == null || params.getSort().equals(SortFilters.EVENT_DATE)) {
+                        return event2.getEventDate().compareTo(event1.getEventDate());
+                    }
+
+                    return event1.getViews() - event2.getViews();
+                })
+                .skip(params.getFrom())
+                .limit(params.getSize())
+                .toList();
+
+        result.forEach((event) -> statsClient.hit(
+                        CreateHitDto.builder()
+                                .uri(request.getRequestURI() + "/" + event.getId())
+                                .ip(request.getRemoteAddr())
+                                .build()
+                )
+        );
+
+        return result;
     }
 
     private BooleanExpression getPredicateForFindAllPublic(FindAllPublicParams params) {
-        BooleanExpressionPredicate res =
+        BooleanExpression byPublished = QEvent.event.state.eq(State.PUBLISHED);
+        BooleanExpression byText = getByText(params.getText());
+
+        BooleanExpression byCategories = params.getCategories() == null
+                ? Expressions.TRUE
+                : QEvent.event.category.id.in(params.getCategories());
+
+        BooleanExpression byPaid = params.getPaid() == null
+                ? Expressions.TRUE
+                : QEvent.event.paid.eq(params.getPaid());
+
+        BooleanExpression byRange = getByRange(params.getRangeStart(), params.getRangeEnd());
+
+        return byPublished.and(byText).and(byCategories).and(byPaid).and(byRange);
+    }
+
+    private BooleanExpression getByRange(LocalDateTime start, LocalDateTime end) {
+        if (start == null && end == null) {
+            return QEvent.event.eventDate.after(LocalDateTime.now());
+        }
+        BooleanExpression byStart = start == null
+                ? Expressions.TRUE
+                : QEvent.event.eventDate.after(start);
+
+        BooleanExpression byEnd = end == null
+                ? Expressions.TRUE
+                : QEvent.event.eventDate.before(end);
+
+        return byStart.and(byEnd);
+    }
+
+    private BooleanExpression getByText(String text) {
+        if (text == null) {
+            return Expressions.TRUE;
+        }
+        BooleanExpression byAnnotation = QEvent.event.annotation.containsIgnoreCase(text);
+        BooleanExpression byDescription = QEvent.event.description.containsIgnoreCase(text);
+
+        return byAnnotation.or(byDescription);
     }
 
     private EventRequestStatusUpdateResult getEventRequestStatusUpdateResult(Long eventId) {

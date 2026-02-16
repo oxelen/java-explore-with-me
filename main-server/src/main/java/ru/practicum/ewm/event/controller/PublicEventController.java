@@ -1,5 +1,6 @@
 package ru.practicum.ewm.event.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,8 @@ public class PublicEventController {
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) SortFilters sort,
             @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request
     ) {
         log.info("GET all events public");
         FindAllPublicParams params = FindAllPublicParams.builder()
@@ -49,7 +51,7 @@ public class PublicEventController {
                 .size(size)
                 .build();
 
-        List<EventShortDto> res = eventService.findAllPublic(params);
+        List<EventShortDto> res = eventService.findAllPublic(params, request);
         log.info("events found");
 
         return ResponseEntity.ok(res);

@@ -1,5 +1,6 @@
 package ru.practicum.ewm.event.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.util.FindAllPublicParams;
 import ru.practicum.ewm.event.util.FindAllRequestParams;
@@ -26,5 +27,5 @@ public interface EventService {
 
     List<EventFullDto> findAllAdmin(FindAllRequestParams params);
 
-    List<EventShortDto> findAllPublic(FindAllPublicParams params);
+    List<EventShortDto> findAllPublic(FindAllPublicParams params, HttpServletRequest request);
 }
