@@ -13,7 +13,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     @Query("select count(r) " +
             "from Request r " +
             "where r.event.id = :eventId " +
-            "and r.status = 'ACCEPTED'")
+            "and r.status = 'CONFIRMED'")
     int confirmedCount(Long eventId);
 
     @Query("select r " +
@@ -25,7 +25,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "from Request r " +
             "where r.event.id = :eventId and r.id in :ids " +
             "order by r.created asc")
-    Queue<Request> findRequestsByIds(Long eventId, List<Long> ids);
+    List<Request> findRequestsByIds(Long eventId, List<Long> ids);
 
     List<Request> findAllByEvent(Event event);
 

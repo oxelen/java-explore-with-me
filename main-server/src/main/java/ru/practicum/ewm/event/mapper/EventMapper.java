@@ -26,7 +26,7 @@ public class EventMapper {
         event.setLocLat(dto.getLocation().lat());
         event.setLocLon(dto.getLocation().lon());
         event.setPaid(dto.isPaid());
-        event.setPartLimit(dto.getPartLimit());
+        event.setPartLimit(dto.getParticipantLimit());
         event.setRequestModeration(dto.isRequestModeration());
         event.setState(State.PENDING);
         event.setTitle(dto.getTitle());

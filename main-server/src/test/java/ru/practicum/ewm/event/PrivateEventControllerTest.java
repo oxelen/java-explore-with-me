@@ -49,7 +49,7 @@ public class PrivateEventControllerTest {
                 .eventDate(LocalDateTime.MAX)
                 .location(new Location(1.1f, 1.1f))
                 .paid(false)
-                .partLimit(5)
+                .participantLimit(5)
                 .requestModeration(false)
                 .title("test")
                 .build();

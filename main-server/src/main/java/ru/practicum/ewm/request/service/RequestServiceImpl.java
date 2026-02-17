@@ -46,7 +46,7 @@ public class RequestServiceImpl implements RequestService {
             throw new ConditionsNotMetException("event must be PUBLISHED");
         }
 
-        if (event.getPartLimit() <= getConfirmedCount(eventId)) {
+        if (event.getPartLimit() != 0 && event.getPartLimit() <= getConfirmedCount(eventId)) {
             log.warn("The participant limit has been reached");
             throw new ConditionsNotMetException("The participant limit has been reached");
         }

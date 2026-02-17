@@ -3,6 +3,7 @@ package ru.practicum.ewm.event.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,7 +41,8 @@ public class NewEventDto {
 
     private boolean paid = false;
 
-    private Integer partLimit = 0;
+    @PositiveOrZero
+    private Integer participantLimit = 0;
 
     private boolean requestModeration = true;
 

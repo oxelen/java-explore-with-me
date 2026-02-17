@@ -43,7 +43,7 @@ public class StatsClient {
                 "uris", uris,
                 "unique", unique);
 
-        return rest.exchange("/hits?end={end}&uris={uris}&unique={unique}",
+        return rest.exchange("/stats?start={start}&end={end}&uris={uris}&unique={unique}",
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<List<ResponseHitDto>>() {

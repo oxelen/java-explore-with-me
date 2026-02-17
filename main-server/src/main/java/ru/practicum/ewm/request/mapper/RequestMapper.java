@@ -29,7 +29,7 @@ public class RequestMapper {
         req.setCreated(LocalDateTime.now());
         req.setEvent(event);
         req.setRequester(user);
-        req.setStatus(Status.PENDING);
+        req.setStatus(Status.CONFIRMED);
 
         return req;
     }

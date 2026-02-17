@@ -5,7 +5,6 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintDeclarationException;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,6 +15,7 @@ import ru.practicum.ewm.category.dao.CategoryRepository;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
 import ru.practicum.ewm.error.exception.NotFoundException;
+import ru.practicum.ewm.error.exception.ValidationException;
 import ru.practicum.ewm.event.dao.EventRepository;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.mapper.EventMapper;
@@ -140,33 +140,35 @@ public class EventServiceImpl implements EventService {
 
         Event filled = fillUpdEvent(old, upd);
 
-        filled.setState(
-                switch (updEventDto.getStateAction()) {
-                    case StateActionAdmin.PUBLISH_EVENT -> {
-                        if (filled.getEventDate().isBefore(LocalDateTime.now().minusHours(1))) {
-                            log.warn("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
-                            throw new ConditionsNotMetException("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+        if (updEventDto.getStateAction() != null){
+            filled.setState(
+                    switch (updEventDto.getStateAction()) {
+                        case StateActionAdmin.PUBLISH_EVENT -> {
+                            if (filled.getEventDate().isBefore(LocalDateTime.now().minusHours(1))) {
+                                log.warn("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+                                throw new ConditionsNotMetException("дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+                            }
+
+                            if (!filled.getState().equals(State.PENDING)) {
+                                log.warn("Cannot publish the event because it's not in the right state: PENDING");
+                                throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PUBLISHED");
+                            }
+
+                            filled.setPublishedOn(LocalDateTime.now());
+                            yield State.PUBLISHED;
                         }
 
-                        if (!filled.getState().equals(State.PUBLISHED)) {
-                            log.warn("Cannot publish the event because it's not in the right state: PUBLISHED");
-                            throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PUBLISHED");
-                        }
+                        case StateActionAdmin.REJECT_EVENT -> {
+                            if (filled.getState().equals(State.PENDING)) {
+                                log.warn("Cannot reject the event because it's not in the right state: PENDING");
+                                throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PENDING");
+                            }
 
-                        filled.setPublishedOn(LocalDateTime.now());
-                        yield State.PENDING;
+                            yield State.CANCELED;
+                        }
                     }
-
-                    case StateActionAdmin.REJECT_EVENT -> {
-                        if (filled.getState().equals(State.PUBLISHED)) {
-                            log.warn("Cannot publish the event because it's not in the right state: PENDING");
-                            throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PENDING");
-                        }
-
-                        yield State.CANCELED;
-                    }
-                }
-        );
+            );
+        }
 
         Event saved = eventRepository.save(filled);
 
@@ -199,17 +201,12 @@ public class EventServiceImpl implements EventService {
             throw new ConditionsNotMetException("The participant limit has been reached");
         }
 
-        Queue<Request> found = requestRepository.findRequestsByIds(eventId, requests.getRequestIds());
+        List<Request> found = requestRepository.findRequestsByIds(eventId, requests.getRequestIds());
         found.forEach(req -> {
-            if (!req.getStatus().equals(Status.PENDING)) {
+            if (!req.getStatus().equals(Status.REJECTED)) {
                 log.warn("Request must have status PENDING, requestId={}", req.getId());
-                throw new ValidationException("Request must have status PENDING");
+                throw new ValidationException("Request must have status REJECTED");
             }
-        });
-
-        while (found.peek() != null) {
-            Request req = found.poll();
-
             if (requests.getStatus().equals(Status.CONFIRMED) && event.getPartLimit() == getConfirmedCount(eventId)) {
                 log.debug("The participant limit has been reached, remaining requests will be rejected");
 
@@ -217,12 +214,12 @@ public class EventServiceImpl implements EventService {
                     rejectReq.setStatus(Status.REJECTED);
                     requestRepository.save(rejectReq);
                 });
-                break;
+                return;
             }
 
             req.setStatus(requests.getStatus());
             requestRepository.save(req);
-        }
+        });
 
         return getEventRequestStatusUpdateResult(eventId);
     }
@@ -316,6 +313,7 @@ public class EventServiceImpl implements EventService {
         Event event = getEvent(id);
         if (!event.getState().equals(State.PUBLISHED)) {
             log.warn("event id={} not published", id);
+            throw new NotFoundException("not found");
         }
 
         statsClient.hit(CreateHitDto.builder().uri(request.getRequestURI()).ip(request.getRemoteAddr()).build());
@@ -469,7 +467,7 @@ public class EventServiceImpl implements EventService {
         LocalDateTime target = LocalDateTime.now().plusHours(2);
         if (eventDate.isBefore(target)) {
             log.warn("Event date is not before 2 hours from now");
-            throw new ConditionsNotMetException("должно содержать дату, которая еще не наступила.");
+            throw new ValidationException("должно содержать дату, которая еще не наступила.");
         }
     }
 
@@ -493,16 +491,17 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
-    private List<ResponseHitDto> findStats(String[] uris) {
-        return statsClient.findStats(LocalDateTime.MIN,
-                LocalDateTime.MAX,
+    private List<ResponseHitDto> findStats(String[] uris, LocalDateTime start, LocalDateTime end) {
+        return statsClient.findStats(start,
+                end,
                 uris,
-                false).getBody();
+                true).getBody();
     }
 
     private int getEventViews(Long eventId) {
         String[] uris = new String[]{"/events/" + eventId};
-        List<ResponseHitDto> found = findStats(uris);
+        Event event = getEvent(eventId);
+        List<ResponseHitDto> found = findStats(uris, event.getCreatedOn(), LocalDateTime.now());
 
         return found == null || found.isEmpty() ? 0 : found.getFirst().getHits().intValue();
     }
