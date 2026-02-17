@@ -1,4 +1,4 @@
-package ru.practicum.ewm.compilation.srvice;
+package ru.practicum.ewm.compilation.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -96,7 +96,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Set<Event> getEventsFromDto(List<Long> eventIds) {
-        return eventIds.stream().map(this::findEventById).collect(Collectors.toSet());
+        return eventIds == null ? Set.of() : eventIds.stream().map(this::findEventById).collect(Collectors.toSet());
     }
 
     private Compilation getById(Long compId) {
@@ -124,16 +124,17 @@ public class CompilationServiceImpl implements CompilationService {
                 .toList();
     }
 
-    private List<ResponseHitDto> findStats(String[] uris) {
-        return statsClient.findStats(LocalDateTime.MIN,
-                LocalDateTime.MAX,
+    private List<ResponseHitDto> findStats(String[] uris, LocalDateTime start, LocalDateTime end) {
+        return statsClient.findStats(start,
+                end,
                 uris,
-                false).getBody();
+                true).getBody();
     }
 
     private int getEventViews(Long eventId) {
         String[] uris = new String[]{"/events/" + eventId};
-        List<ResponseHitDto> found = findStats(uris);
+        Event event = findEventById(eventId);
+        List<ResponseHitDto> found = findStats(uris, event.getCreatedOn(), LocalDateTime.now());
 
         return found == null || found.isEmpty() ? 0 : found.getFirst().getHits().intValue();
     }

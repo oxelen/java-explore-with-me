@@ -1,10 +1,8 @@
 package ru.practicum.ewm.event.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintDeclarationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,8 +25,6 @@ import ru.practicum.ewm.event.util.FindAllRequestParams;
 import ru.practicum.ewm.event.util.SortFilters;
 import ru.practicum.ewm.event.util.UpdateEventCommonFields;
 import ru.practicum.ewm.request.dao.RequestRepository;
-import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
-import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.Request;
@@ -42,7 +38,6 @@ import ru.practicum.stats.dto.ResponseHitDto;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 
 @Service
 @Slf4j
@@ -53,7 +48,6 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
     private final StatsClient statsClient;
-    private final ObjectMapper mapper;
 
     @Override
     public EventFullDto create(Long userId, NewEventDto newEvent) {
@@ -87,7 +81,7 @@ public class EventServiceImpl implements EventService {
 
         if (old.getState().equals(State.PUBLISHED)) {
             log.warn("even must not be published");
-            throw new ConstraintDeclarationException("Even must not be published");
+            throw new ConditionsNotMetException("Even must not be published");
         }
 
         UpdateEventCommonFields upd = UpdateEventCommonFields.builder()
@@ -140,7 +134,7 @@ public class EventServiceImpl implements EventService {
 
         Event filled = fillUpdEvent(old, upd);
 
-        if (updEventDto.getStateAction() != null){
+        if (updEventDto.getStateAction() != null) {
             filled.setState(
                     switch (updEventDto.getStateAction()) {
                         case StateActionAdmin.PUBLISH_EVENT -> {
@@ -159,9 +153,9 @@ public class EventServiceImpl implements EventService {
                         }
 
                         case StateActionAdmin.REJECT_EVENT -> {
-                            if (filled.getState().equals(State.PENDING)) {
-                                log.warn("Cannot reject the event because it's not in the right state: PENDING");
-                                throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PENDING");
+                            if (filled.getState().equals(State.PUBLISHED)) {
+                                log.warn("Cannot reject the event because it's not in the right state: PUBLISHED");
+                                throw new ConditionsNotMetException("Cannot publish the event because it's not in the right state: PUBLISHED");
                             }
 
                             yield State.CANCELED;
@@ -196,16 +190,16 @@ public class EventServiceImpl implements EventService {
         Event event = getEvent(eventId);
         checkUserIsInitiator(userId, event);
 
-        if (event.getPartLimit() == getConfirmedCount(eventId)) {
+        if (requests.getStatus().equals(Status.CONFIRMED) && event.getPartLimit() == getConfirmedCount(eventId)) {
             log.warn("The participant limit has been reached");
             throw new ConditionsNotMetException("The participant limit has been reached");
         }
 
         List<Request> found = requestRepository.findRequestsByIds(eventId, requests.getRequestIds());
         found.forEach(req -> {
-            if (!req.getStatus().equals(Status.REJECTED)) {
+            if (!req.getStatus().equals(Status.PENDING)) {
                 log.warn("Request must have status PENDING, requestId={}", req.getId());
-                throw new ValidationException("Request must have status REJECTED");
+                throw new ConditionsNotMetException("Request must have status PENDING");
             }
             if (requests.getStatus().equals(Status.CONFIRMED) && event.getPartLimit() == getConfirmedCount(eventId)) {
                 log.debug("The participant limit has been reached, remaining requests will be rejected");
@@ -267,11 +261,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> findAllPublic(FindAllPublicParams params, HttpServletRequest request) {
+        validateParams(params);
         BooleanExpression predicate = getPredicateForFindAllPublic(params);
-
-        Sort sort = params.getSort() == null || params.getSort().equals(SortFilters.EVENT_DATE)
-                ? Sort.by(Sort.Direction.DESC, "eventDate")
-                : Sort.by(Sort.Direction.DESC, "views");
 
         Iterable<Event> found = eventRepository.findAll(predicate);
 
@@ -279,7 +270,7 @@ public class EventServiceImpl implements EventService {
 
         for (Event event : found) {
             int confirmedRequests = getConfirmedCount(event.getId());
-            if (!(params.getOnlyAvailable() && event.getPartLimit() > confirmedRequests)) {
+            if (params.getOnlyAvailable() && event.getPartLimit() <= confirmedRequests) {
                 continue;
             }
             result.add(EventMapper.toEventShortDto(event, confirmedRequests, getEventViews(event.getId())));
@@ -319,6 +310,17 @@ public class EventServiceImpl implements EventService {
         statsClient.hit(CreateHitDto.builder().uri(request.getRequestURI()).ip(request.getRemoteAddr()).build());
 
         return EventMapper.toFullEventDto(event, getConfirmedCount(id), getEventViews(id));
+    }
+
+    private void validateParams(FindAllPublicParams params) {
+        validateRange(params.getRangeStart(), params.getRangeEnd());
+    }
+
+    private void validateRange(LocalDateTime start, LocalDateTime end) {
+        if (start != null && end != null && start.isAfter(end)) {
+            log.warn("start date can not be after end date");
+            throw new ValidationException("end time must be after start time");
+        }
     }
 
     private BooleanExpression getPredicateForFindAllPublic(FindAllPublicParams params) {
@@ -505,19 +507,4 @@ public class EventServiceImpl implements EventService {
 
         return found == null || found.isEmpty() ? 0 : found.getFirst().getHits().intValue();
     }
-
-    /*private Map<Long, Integer> getEventsViews(List<Event> events) {
-        String[] uris = events.stream()
-                .map(event -> "/events/" + event.getId())
-                .toArray(String[]::new);
-
-        Map<Long, Integer> eventViews = new HashMap<>();
-        for (ResponseHitDto stat : findStats(uris)) {
-            String uri = stat.getUri();
-            Long id = Long.parseLong(uri.substring(uri.length() - 1));
-            eventViews.put(id, stat.getHits().intValue());
-        }
-
-        return eventViews;
-    }*/
 }

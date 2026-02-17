@@ -1,6 +1,6 @@
-package ru.practicum.ewm.event.dto;
+package ru.practicum.ewm.event.dto.validation.values;
 
-public class StringLengthValues {
+public class EventStringLengthValues {
     public static final int ANNOTATION_MIN_LENGTH = 20;
     public static final int ANNOTATION_MAX_LENGTH = 2000;
     public static final int DESCRIPTION_MIN_LENGTH = 20;

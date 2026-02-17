@@ -14,7 +14,7 @@ import ru.practicum.ewm.validation.StringLength;
 
 import java.time.LocalDateTime;
 
-import static ru.practicum.ewm.event.dto.StringLengthValues.*;
+import static ru.practicum.ewm.event.dto.validation.values.EventStringLengthValues.*;
 
 @Data
 @Builder

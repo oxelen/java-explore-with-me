@@ -1,10 +1,10 @@
 package ru.practicum.ewm.event.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.event.model.State;
 import ru.practicum.ewm.user.dto.UserShortDto;
@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class EventFullDto {
     private String annotation;
 
@@ -23,12 +24,12 @@ public class EventFullDto {
 
     private int confirmedRequests;
 
-    @DateTimeFormat(pattern = DateTimePattern.PATTERN)
+    @JsonFormat(pattern = DateTimePattern.PATTERN)
     private LocalDateTime createdOn;
 
     private String description;
 
-    @DateTimeFormat(pattern = DateTimePattern.PATTERN)
+    @JsonFormat(pattern = DateTimePattern.PATTERN)
     private LocalDateTime eventDate;
 
     private Long id;
@@ -39,9 +40,10 @@ public class EventFullDto {
 
     private boolean paid;
 
+    @JsonFormat(pattern = DateTimePattern.PATTERN)
     private int participantLimit;
 
-    @DateTimeFormat(pattern = DateTimePattern.PATTERN)
+    @JsonFormat(pattern = DateTimePattern.PATTERN)
     private LocalDateTime publishedOn;
 
     private boolean requestModeration;

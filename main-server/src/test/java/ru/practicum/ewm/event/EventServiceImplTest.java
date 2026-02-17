@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.ResponseEntity;
 import ru.practicum.ewm.category.model.Category;
-import ru.practicum.ewm.error.exception.ConditionsNotMetException;
+import ru.practicum.ewm.error.exception.ValidationException;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.service.EventService;
@@ -71,7 +71,7 @@ public class EventServiceImplTest {
         NewEventDto createDto = getDefaultDto();
         createDto.setEventDate(LocalDateTime.now());
 
-        Assertions.assertThrows(ConditionsNotMetException.class, () -> eventService.create(user.getId(), createDto));
+        Assertions.assertThrows(ValidationException.class, () -> eventService.create(user.getId(), createDto));
     }
 
     @Test

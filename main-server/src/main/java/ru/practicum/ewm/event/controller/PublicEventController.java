@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
@@ -11,6 +12,7 @@ import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.event.util.FindAllPublicParams;
 import ru.practicum.ewm.event.util.SortFilters;
+import ru.practicum.ewm.util.DateTimePattern;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,8 +29,12 @@ public class PublicEventController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) Long[] categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false) LocalDateTime rangeStart,
-            @RequestParam(required = false) LocalDateTime rangeEnd,
+            @RequestParam(required = false)
+            @DateTimeFormat(pattern = DateTimePattern.PATTERN)
+            LocalDateTime rangeStart,
+            @RequestParam(required = false)
+            @DateTimeFormat(pattern = DateTimePattern.PATTERN)
+            LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) SortFilters sort,
             @RequestParam(defaultValue = "0") int from,

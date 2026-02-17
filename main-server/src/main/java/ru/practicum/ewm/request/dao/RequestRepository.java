@@ -7,7 +7,6 @@ import ru.practicum.ewm.request.model.Request;
 import ru.practicum.ewm.user.model.User;
 
 import java.util.List;
-import java.util.Queue;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
     @Query("select count(r) " +

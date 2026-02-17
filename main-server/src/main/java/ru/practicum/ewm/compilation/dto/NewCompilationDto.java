@@ -11,7 +11,8 @@ import ru.practicum.ewm.validation.StringLength;
 
 import java.util.List;
 
-import static ru.practicum.ewm.compilation.dto.StringLengthValues.*;
+import static ru.practicum.ewm.compilation.dto.validation.values.CompilationStringLengthValues.TITLE_MAX_LENGTH;
+import static ru.practicum.ewm.compilation.dto.validation.values.CompilationStringLengthValues.TITLE_MIN_LENGTH;
 
 @Data
 @Builder

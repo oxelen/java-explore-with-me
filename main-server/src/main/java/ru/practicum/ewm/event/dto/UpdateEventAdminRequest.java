@@ -6,16 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.ewm.util.DateTimePattern;
 import ru.practicum.ewm.validation.StringLength;
 
 import java.time.LocalDateTime;
 
-import static ru.practicum.ewm.event.dto.StringLengthValues.*;
-import static ru.practicum.ewm.event.dto.StringLengthValues.DESCRIPTION_MAX_LENGTH;
-import static ru.practicum.ewm.event.dto.StringLengthValues.TITLE_MAX_LENGTH;
-import static ru.practicum.ewm.event.dto.StringLengthValues.TITLE_MIN_LENGTH;
+import static ru.practicum.ewm.event.dto.validation.values.EventStringLengthValues.*;
 
 @Data
 @Builder

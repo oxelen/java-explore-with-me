@@ -11,4 +11,3 @@ spring.datasource:
   url: jdbc:postgresql://stats-db:5432/statsdb
   username: dbuser
   password: 12345
-

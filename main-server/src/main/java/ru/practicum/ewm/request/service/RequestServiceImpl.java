@@ -46,13 +46,12 @@ public class RequestServiceImpl implements RequestService {
             throw new ConditionsNotMetException("event must be PUBLISHED");
         }
 
+        Request req = RequestMapper.toRequest(user, event);
         if (event.getPartLimit() != 0 && event.getPartLimit() <= getConfirmedCount(eventId)) {
-            log.warn("The participant limit has been reached");
+            log.debug("The participant limit has been reached");
             throw new ConditionsNotMetException("The participant limit has been reached");
         }
-
-        Request req = RequestMapper.toRequest(user, event);
-        if (!event.isRequestModeration()) {
+        if (!event.isRequestModeration() || event.getPartLimit() == 0) {
             log.debug("event requestModeration is false, change request status to CONFIRMED");
             req.setStatus(Status.CONFIRMED);
         }
@@ -77,7 +76,7 @@ public class RequestServiceImpl implements RequestService {
             throw new ConditionsNotMetException("User with id = " + userId + " not requester of request with id = " + requestId);
         }
 
-        request.setStatus(Status.REJECTED);
+        request.setStatus(Status.CANCELED);
         return RequestMapper.toParticipantRequestDto(request);
     }
 

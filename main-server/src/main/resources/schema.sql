@@ -47,7 +47,7 @@ create table if not exists requests (
     constraint REQUESTS_PK primary key (id),
     foreign key (event_id) references events(id),
     foreign key (requester_id) references users(id),
-    constraint enum_status check (status in ('CONFIRMED', 'REJECTED'))
+    constraint enum_status check (status in ('PENDING', 'CONFIRMED', 'REJECTED', 'CANCELED'))
 );
 
 create table if not exists compilations(

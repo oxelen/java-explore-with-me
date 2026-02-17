@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.ewm.error.exception.ConditionsNotMetException;
@@ -32,7 +31,6 @@ public class ErrorHandler {
             String msg = String.format("Field: %s. Error: %s. Value: %s", fieldName, defMessage, strMsg);
 
             errors.add(new ApiError(
-                   /* Arrays.asList(ex.getStackTrace()),*/
                     msg,
                     "Incorrectly made request",
                     status,
@@ -58,7 +56,6 @@ public class ErrorHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleSQLException(ConstraintViolationException ex) {
         ApiError error = new ApiError(
-           /* Arrays.asList(ex.getStackTrace()),*/
                 ex.getMessage(),
                 "Integrity constraint has been violated.",
                 HttpStatus.CONFLICT,
@@ -71,7 +68,6 @@ public class ErrorHandler {
     @ExceptionHandler(ConditionsNotMetException.class)
     public ResponseEntity<ApiError> handleConditionsNotMet(ConditionsNotMetException ex) {
         ApiError error = new ApiError(
-                /* Arrays.asList(ex.getStackTrace()),*/
                 ex.getMessage(),
                 "For the requested operation the conditions are not met.",
                 HttpStatus.CONFLICT,

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.compilation.dto.CompilationDto;
 import ru.practicum.ewm.compilation.dto.NewCompilationDto;
 import ru.practicum.ewm.compilation.dto.UpdateCompilationRequest;
-import ru.practicum.ewm.compilation.srvice.CompilationService;
+import ru.practicum.ewm.compilation.service.CompilationService;
 
 @RestController
 @RequestMapping("/admin/compilations")
