@@ -1,4 +1,7 @@
-spring.datasource.url: jdbc:postgresql://localhost:5431/ewmdb
+spring.datasource:
+  url: jdbc:postgresql://localhost:5431/ewmdb
+  username: dbuser
+  password: 12345
 ewm:
   stats:
     server:

@@ -8,6 +8,6 @@ spring:
 
 spring.datasource:
   driver-class-name: org.postgresql.Driver
-  url: jdbc:postgresql://stats-db:5432/statsdb
-  username: dbuser
-  password: 12345
+  url: ${SPRING_DATASOURCE_URL}
+  username: ${SPRING_DATASOURCE_USERNAME}
+  password: ${SPRING_DATASOURCE_PASSWORD}
