@@ -29,21 +29,21 @@ public class AdminUserController {
         log.info("User created, id: {}", res.getId());
 
         return ResponseEntity
-                .status(201)
+                .status(HttpStatus.CREATED)
                 .body(res);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDto>> findUsers(@RequestParam(name = "ids", required = false) Long[] ids,
-                                                   @RequestParam(name = "from", defaultValue = "0") int from,
-                                                   @RequestParam(name = "size", defaultValue = "10") int size) {
+    public ResponseEntity<List<UserDto>> findUsers(
+            @RequestParam(name = "ids", required = false) Long[] ids,
+            @RequestParam(name = "from", defaultValue = "0") int from,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
         log.info("GET users. from  {}, size = {}", from, size);
         List<UserDto> res = userService.findUsers(ids, from, size);
         log.info("Users found, size = {}", res.size());
 
-        return ResponseEntity
-                .status(200)
-                .body(res);
+        return ResponseEntity.ok(res);
     }
 
     @DeleteMapping("/{userId}")

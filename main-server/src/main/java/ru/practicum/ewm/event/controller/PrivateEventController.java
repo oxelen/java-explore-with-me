@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class PrivateEventController {
         EventFullDto res = eventService.create(userId, newEvent);
         log.info("event created");
 
-        return ResponseEntity.status(201).body(res);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
     @GetMapping
@@ -43,7 +44,7 @@ public class PrivateEventController {
         List<EventShortDto> res = eventService.findByUser(userId, from, size);
         log.info("events found");
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/{eventId}")
@@ -55,7 +56,7 @@ public class PrivateEventController {
         EventFullDto res = eventService.findById(userId, eventId);
         log.info("event found, id={}", eventId);
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @PatchMapping("/{eventId}")
@@ -68,44 +69,31 @@ public class PrivateEventController {
         EventFullDto res = eventService.update(userId, eventId, updEvent);
         log.info("event updated, id={}", eventId);
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/{eventId}/requests")
     public ResponseEntity<List<ParticipationRequestDto>> getParticipantRequests(
-            @PositiveOrZero
-            @PathVariable
-            Long userId,
-
-            @PositiveOrZero
-            @PathVariable
-            Long eventId
+            @PositiveOrZero @PathVariable Long userId,
+            @PositiveOrZero @PathVariable Long eventId
     ) {
         log.info("GET participant requests, userId={}, eventId={}", userId, eventId);
         List<ParticipationRequestDto> res = eventService.getParticipantRequests(userId, eventId);
         log.info("requests found");
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @PatchMapping("/{eventId}/requests")
     public ResponseEntity<EventRequestStatusUpdateResult> patchRequestStatus(
-            @PositiveOrZero
-            @PathVariable
-            Long userId,
-
-            @PositiveOrZero
-            @PathVariable
-            Long eventId,
-
-            @Valid
-            @RequestBody
-            EventRequestStatusUpdateRequest request
+            @PositiveOrZero @PathVariable Long userId,
+            @PositiveOrZero @PathVariable Long eventId,
+            @Valid @RequestBody EventRequestStatusUpdateRequest request
     ) {
         log.info("PATCH request status, userId={}, eventId={}", userId, eventId);
         EventRequestStatusUpdateResult res = eventService.patchRequestStatus(userId, eventId, request);
         log.info("status updated");
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 }

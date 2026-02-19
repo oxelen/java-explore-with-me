@@ -18,14 +18,16 @@ public class PublicCompilationController {
     private final CompilationService compilationService;
 
     @GetMapping
-    public ResponseEntity<List<CompilationDto>> findAll(@RequestParam(required = false) Boolean pinned,
-                                                     @RequestParam(defaultValue = "0") int from,
-                                                     @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<List<CompilationDto>> findAll(
+            @RequestParam(required = false) Boolean pinned,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         log.info("GET all compilations");
         List<CompilationDto> res = compilationService.findAll(pinned, from, size);
         log.info("compilations found");
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/{compId}")
@@ -34,6 +36,6 @@ public class PublicCompilationController {
         CompilationDto res = compilationService.findById(compId);
         log.info("compilation found id {}", compId);
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 }

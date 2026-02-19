@@ -27,23 +27,20 @@ public class AdminCategoryController {
         log.info("Category created");
 
         return ResponseEntity
-                .status(201)
+                .status(HttpStatus.CREATED)
                 .body(res);
     }
 
     @PatchMapping("/{catId}")
-    public ResponseEntity<CategoryDto> patch(@PathVariable @PositiveOrZero
-                                             Long catId,
-                                             @Valid @RequestBody
-                                             NewCategoryRequest newCategoryRequest
+    public ResponseEntity<CategoryDto> patch(
+            @PathVariable @PositiveOrZero Long catId,
+            @Valid @RequestBody NewCategoryRequest newCategoryRequest
     ) {
         log.info("PATCH category, id = {}", catId);
         CategoryDto res = categoryService.update(catId, newCategoryRequest);
         log.info("Category updated");
 
-        return ResponseEntity
-                .status(200)
-                .body(res);
+        return ResponseEntity.ok(res);
     }
 
     @DeleteMapping("/{catId}")

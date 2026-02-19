@@ -27,7 +27,7 @@ public class AdminCompilationController {
         CompilationDto res = compilationService.create(dto);
         log.info("compilation created");
 
-        return ResponseEntity.status(201).body(res);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
     @DeleteMapping("/{compId}")
@@ -45,6 +45,6 @@ public class AdminCompilationController {
         CompilationDto res = compilationService.update(compId, dto);
         log.info("compilation updated, id={}", compId);
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 }

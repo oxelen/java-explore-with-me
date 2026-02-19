@@ -29,12 +29,8 @@ public class PublicEventController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) Long[] categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = DateTimePattern.PATTERN)
-            LocalDateTime rangeStart,
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = DateTimePattern.PATTERN)
-            LocalDateTime rangeEnd,
+            @RequestParam(required = false) @DateTimeFormat(pattern = DateTimePattern.PATTERN) LocalDateTime rangeStart,
+            @RequestParam(required = false) @DateTimeFormat(pattern = DateTimePattern.PATTERN) LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) SortFilters sort,
             @RequestParam(defaultValue = "0") int from,
@@ -61,8 +57,10 @@ public class PublicEventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventFullDto> findByIdPublic(@PositiveOrZero @PathVariable Long id,
-                                                       HttpServletRequest request) {
+    public ResponseEntity<EventFullDto> findByIdPublic(
+            @PositiveOrZero @PathVariable Long id,
+            HttpServletRequest request
+    ) {
         log.info("GET event by id public, id={}", id);
         EventFullDto res = eventService.findByIdPublic(id, request);
         log.info("event with id={} found", id);

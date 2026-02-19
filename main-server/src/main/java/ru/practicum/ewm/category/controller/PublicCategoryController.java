@@ -18,13 +18,15 @@ public class PublicCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryDto>> findAll(@PositiveOrZero @RequestParam(defaultValue = "0") int from,
-                                                     @PositiveOrZero @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<List<CategoryDto>> findAll(
+            @PositiveOrZero @RequestParam(defaultValue = "0") int from,
+            @PositiveOrZero @RequestParam(defaultValue = "10") int size
+    ) {
         log.info("GET all categories");
         List<CategoryDto> res = categoryService.findAll(from, size);
         log.info("categories found");
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/{catId}")
@@ -33,6 +35,6 @@ public class PublicCategoryController {
         CategoryDto res = categoryService.findById(catId);
         log.info("category id={} found", catId);
 
-        return ResponseEntity.status(200).body(res);
+        return ResponseEntity.ok(res);
     }
 }
