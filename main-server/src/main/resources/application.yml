@@ -2,9 +2,9 @@ server.port: 8080
 
 spring.datasource:
   driver-class-name: org.postgresql.Driver
-  url: jdbc:postgresql://ewm-db:5432/ewmdb
-  username: dbuser
-  password: 12345
+  url: ${SPRING_DATASOURCE_URL}
+  username: ${SPRING_DATASOURCE_USERNAME}
+  password: ${SPRING_DATASOURCE_PASSWORD}
 
 spring:
   jpa:
@@ -12,3 +12,10 @@ spring:
     properties.hibernate.format_sql: true
 
   sql.init.mode: always
+  application:
+    name: "ewm-main-service"
+
+ewm:
+  stats:
+    server:
+      url: ${SERVICES_STATSSERVER_URI}
