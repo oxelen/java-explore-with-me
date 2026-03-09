@@ -116,3 +116,13 @@ Tests are implemented using:
 - Mockito
 
 API testing was performed with Postman.
+
+## What I Practiced in This Project
+
+- Designing RESTful APIs
+- Building microservice architecture
+- Working with PostgreSQL and JPA
+- DTO mapping using MapStruct
+- Containerized deployment with Docker
+- Pagination and filtering
+- Role-based API access (public/user/admin)
