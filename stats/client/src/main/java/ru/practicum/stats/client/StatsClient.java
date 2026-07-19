@@ -50,4 +50,9 @@ public class StatsClient {
                 },
                 params);
     }
+
+    public void reset() {
+        log.info("Start client method reset");
+        rest.postForLocation("/internal/test/reset", null);
+    }
 }
