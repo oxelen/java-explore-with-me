@@ -11,8 +11,11 @@ logging.level.org.springframework:
   transaction: INFO
   transaction.interceptor: TRACE
 
+server:
+  port: 9090
+
 spring.datasource:
   driverClassName: org.h2.Driver
-  url: jdbc:h2:file:./db/ewm-stats-db-test
-  username: dbuser
-  password: 12345
+  url: jdbc:h2:mem:ewmqa;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+  username: stat
+  password:
