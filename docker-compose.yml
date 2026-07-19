@@ -1,11 +1,14 @@
 services:
   stats-server:
-    build: ./stats/server
+    build:
+      context: .
+      dockerfile: stats/server/Dockerfile
     container_name: stats
     ports:
       - "9090:9090"
     depends_on:
-      - stats-db
+      stats-db:
+          condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statsdb
       - SPRING_DATASOURCE_USERNAME=dbuser
@@ -21,15 +24,24 @@ services:
       - POSTGRES_DB=statsdb
       - POSTGRES_USER=dbuser
       - POSTGRES_PASSWORD=12345
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
 
   ewm-service:
-    build: ./main-server
+    build:
+      context: .
+      dockerfile: main-server/Dockerfile
     container_name: ewm
     ports:
       - "8080:8080"
     depends_on:
-      - stats-server
-      - ewm-db
+      ewm-db:
+        condition: service_healthy
+      stats-server:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewmdb
       - SPRING_DATASOURCE_USERNAME=dbuser
@@ -45,3 +57,8 @@ services:
       - POSTGRES_DB=ewmdb
       - POSTGRES_USER=dbuser
       - POSTGRES_PASSWORD=12345
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10

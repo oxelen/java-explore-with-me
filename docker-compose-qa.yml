@@ -1,0 +1,28 @@
+name: ewm-qa
+
+services:
+  ewm-api-qa:
+    build:
+      context: .
+      dockerfile: main-server/Dockerfile
+    ports:
+      - "18080:8080"
+    depends_on:
+      stats-server-qa:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: qa
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:ewmqa;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ""
+      SERVICES_STATSSERVER_URI: http://stats-server-qa:9090
+
+  stats-server-qa:
+    build:
+      context: .
+      dockerfile: stats/server/Dockerfile
+    ports:
+      - "19090:9090"
+    environment:
+      SPRING_PROFILES_ACTIVE: qa
